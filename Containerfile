@@ -22,6 +22,7 @@ RUN make "build-$(echo $TARGETPLATFORM | tr / -)"
 RUN mv ${ORASPKG}/oras/bin/${TARGETPLATFORM}/oras /usr/bin/oras
 
 FROM registry.access.redhat.com/ubi9-micro:latest
+RUN dnf -y install awk && dnf -y clean all
 COPY --from=builder /usr/bin/oras /usr/bin/oras
 RUN mkdir /workspace
 WORKDIR /workspace
