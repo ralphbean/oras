@@ -23,6 +23,7 @@ RUN mv ${ORASPKG}/oras/bin/${TARGETPLATFORM}/oras /usr/bin/oras
 
 FROM registry.access.redhat.com/ubi9:latest
 COPY --from=builder /usr/bin/oras /usr/bin/oras
+RUN dnf -y install curl && dnf -y clean all
 RUN mkdir /workspace
 WORKDIR /workspace
 ENTRYPOINT  ["/usr/bin/oras"]
