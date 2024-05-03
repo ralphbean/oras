@@ -34,4 +34,5 @@ LABEL name="oras" \
 
 RUN mkdir /workspace
 WORKDIR /workspace
+USER 65532:65532
 ENTRYPOINT  ["/usr/bin/oras"]
