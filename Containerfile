@@ -28,6 +28,7 @@ RUN useradd -r  --uid=65532 --create-home --shell /bin/bash oras
 
 COPY --from=builder /usr/bin/oras /usr/bin/oras
 COPY --from=builder /licenses/LICENSE /licenses/LICENSE
+COPY hack/retry.sh /usr/local/bin/retry
 
 WORKDIR /home/oras
 USER 65532:65532
