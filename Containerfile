@@ -24,9 +24,13 @@ RUN mkdir /licenses && mv LICENSE /licenses/LICENSE
 
 FROM registry.access.redhat.com/ubi9:latest@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
 RUN mkdir /licenses
+RUN useradd -r  --uid=65532 --create-home --shell /bin/bash oras
 
 COPY --from=builder /usr/bin/oras /usr/bin/oras
 COPY --from=builder /licenses/LICENSE /licenses/LICENSE
+
+WORKDIR /home/oras
+USER 65532:65532
 
 LABEL name="oras" \
       summary="OCI registry client - managing content like artifacts, images, packages" \
@@ -36,5 +40,4 @@ LABEL name="oras" \
       io.k8s.description="ORAS is the de facto tool for working with OCI Artifacts. It treats media types as a critical piece of the puzzle. Container images are never assumed to be the artifact in question. ORAS provides CLI and client libraries to distribute artifacts across OCI-compliant registries." \
       io.openshift.tags="oci"
 
-USER 65532:65532
 ENTRYPOINT  ["/usr/bin/oras"]
