@@ -4,7 +4,7 @@
 
 retry() {
   status=-1
-  max_try=8
+  max_try=12
   wait_sec=2
 
   for run in $(seq 1 $max_try); do
