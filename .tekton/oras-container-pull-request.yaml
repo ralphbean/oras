@@ -35,7 +35,7 @@ spec:
     - name: show-sbom
       params:
       - name: IMAGE_URL
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       taskRef:
         params:
         - name: name
@@ -50,11 +50,11 @@ spec:
       - name: pipelinerun-name
         value: $(context.pipelineRun.name)
       - name: git-url
-        value: $(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)
+        value: $(tasks.clone-repository-amd64.results.url)?rev=$(tasks.clone-repository-amd64.results.commit)
       - name: image-url
         value: $(params.output-image)
       - name: build-task-status
-        value: $(tasks.build-container.status)
+        value: $(tasks.build-container-amd64.status)
       taskRef:
         params:
         - name: name
@@ -66,7 +66,7 @@ spec:
         resolver: bundles
       workspaces:
       - name: workspace
-        workspace: workspace
+        workspace: workspace-amd64
     params:
     - description: Source Repository URL
       name: git-url
@@ -124,19 +124,19 @@ spec:
     results:
     - description: ""
       name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - description: ""
       name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
     - description: ""
       name: CHAINS-GIT_URL
-      value: $(tasks.clone-repository.results.url)
+      value: $(tasks.clone-repository-amd64.results.url)
     - description: ""
       name: CHAINS-GIT_COMMIT
-      value: $(tasks.clone-repository.results.commit)
+      value: $(tasks.clone-repository-amd64.results.commit)
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
-      value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+      value: $(tasks.build-container-amd64.results.JAVA_COMMUNITY_DEPENDENCIES)
     tasks:
     - name: init
       params:
@@ -155,7 +155,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-    - name: clone-repository
+    - name: clone-repository-amd64
       params:
       - name: url
         value: $(params.git-url)
@@ -179,7 +179,7 @@ spec:
         - "true"
       workspaces:
       - name: output
-        workspace: workspace
+        workspace: workspace-amd64
       - name: basic-auth
         workspace: git-auth
     - name: prefetch-dependencies
@@ -187,7 +187,7 @@ spec:
       - name: input
         value: $(params.prefetch-input)
       runAfter:
-      - clone-repository
+      - clone-repository-amd64
       taskRef:
         params:
         - name: name
@@ -204,10 +204,10 @@ spec:
         - "true"
       workspaces:
       - name: source
-        workspace: workspace
+        workspace: workspace-amd64
       - name: git-basic-auth
         workspace: git-auth
-    - name: build-container
+    - name: build-container-amd64
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -222,7 +222,7 @@ spec:
       - name: IMAGE_EXPIRES_AFTER
         value: $(params.image-expires-after)
       - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
+        value: $(tasks.clone-repository-amd64.results.commit)
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       runAfter:
@@ -243,15 +243,15 @@ spec:
         - "true"
       workspaces:
       - name: source
-        workspace: workspace
+        workspace: workspace-amd64
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
         value: $(params.output-image)
       - name: BASE_IMAGES
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -276,13 +276,13 @@ spec:
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
       - name: IMAGE_URL
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       - name: IMAGE_DIGEST
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -300,11 +300,11 @@ spec:
     - name: clair-scan
       params:
       - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -322,9 +322,9 @@ spec:
     - name: ecosystem-cert-preflight-checks
       params:
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -341,7 +341,7 @@ spec:
         - "false"
     - name: sast-snyk-check
       runAfter:
-      - clone-repository
+      - clone-repository-amd64
       taskRef:
         params:
         - name: name
@@ -358,15 +358,15 @@ spec:
         - "false"
       workspaces:
       - name: workspace
-        workspace: workspace
+        workspace: workspace-amd64
     - name: clamav-scan
       params:
       - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -384,11 +384,11 @@ spec:
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       - name: IMAGE_DIGEST
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       runAfter:
-      - build-container
+      - build-container-amd64
       taskRef:
         params:
         - name: name
@@ -404,12 +404,12 @@ spec:
         values:
         - "false"
     workspaces:
-    - name: workspace
+    - name: workspace-amd64
     - name: git-auth
       optional: true
   taskRunTemplate: {}
   workspaces:
-  - name: workspace
+  - name: workspace-amd64
     volumeClaimTemplate:
       metadata:
         creationTimestamp: null
