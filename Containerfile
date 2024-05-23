@@ -18,8 +18,8 @@ ENV ORASPKG /oras
 ADD . ${ORASPKG}
 WORKDIR ${ORASPKG}/oras
 RUN go mod vendor
-RUN make "build-$(echo $TARGETPLATFORM | tr / -)"
-RUN mv ${ORASPKG}/oras/bin/${TARGETPLATFORM}/oras /usr/bin/oras
+RUN make "build-$(echo $TARGETPLATFORM | sed s/\\/v8// | tr / -)"
+RUN mv ${ORASPKG}/oras/bin/$(echo $TARGETPLATFORM | sed s/\\/v8//)/oras /usr/bin/oras
 RUN mkdir /licenses && mv LICENSE /licenses/LICENSE
 
 FROM registry.access.redhat.com/ubi9:latest@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
