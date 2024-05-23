@@ -272,7 +272,57 @@ spec:
         - "true"
       workspaces:
       - name: workspace
-        workspace: workspace
+        workspace: workspace-amd64
+    - name: build-container
+      params:
+        - name: IMAGE
+          value: $(params.output-image)
+        - name: COMMIT_SHA
+          value: $(tasks.clone-repository.results.commit)
+        - name: IMAGES
+          value:
+            - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
+      runAfter:
+        - build-container-amd64
+      taskRef:
+        params:
+          - name: name
+            value: build-image-manifest
+          - name: bundle
+            value: quay.io/redhat-appstudio-tekton-catalog/task-build-image-manifest:0.1@sha256:4f8da0144ac88fb8139d3f60c40b64db02a5bf8bdd3f500f22389de80c7807c8
+          - name: kind
+            value: task
+        resolver: bundles
+      when:
+        - input: $(tasks.init.results.build)
+          operator: in
+          values:
+            - "true"
+    - name: inspect-image
+      params:
+        - name: IMAGE_URL
+          value: $(tasks.build-container.results.IMAGE_URL)
+        - name: IMAGE_DIGEST
+          value: $(tasks.build-container.results.IMAGE_DIGEST)
+      runAfter:
+        - build-container
+      taskRef:
+        params:
+          - name: name
+            value: inspect-image
+          - name: bundle
+            value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:268632262685fe84400c9b346fe589f96b1930321334660d234037fc25f97806
+          - name: kind
+            value: task
+        resolver: bundles
+      when:
+        - input: $(params.skip-checks)
+          operator: in
+          values:
+            - "false"
+      workspaces:
+        - name: source
+          workspace: workspace-amd64
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
