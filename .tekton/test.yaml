@@ -1,0 +1,68 @@
+kind: Pipeline
+apiVersion: tekton.dev/v1beta1
+metadata:
+  name: functinal-test
+spec:
+  params:
+    - name: SNAPSHOT
+      type: string
+  results:
+    - name: TEST_OUTPUT
+      value: "$(tasks.functional.results.TEST_OUTPUT)"
+  tasks:
+    - name: functional
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+      taskSpec:
+        params:
+          - name: SNAPSHOT
+        results:
+          - name: TEST_OUTPUT
+            description: Test output
+        steps:
+          - image: registry.redhat.io/openshift4/ose-cli:latest
+            env:
+              - name: SNAPSHOT
+                value: $(params.SNAPSHOT)
+            script: |
+              echo -e "Grabbing a copy of yq"
+              oc image extract --confirm quay.io/konflux-ci/yq:latest --path=/usr/bin/yq:. && chmod +x ./yq
+              echo -e "Testing Snapshot:\n ${SNAPSHOT}"
+
+              IMAGE=$(echo ${SNAPSHOT} | ./yq -r '.components[].containerImage')
+              echo -e "Found image ${IMAGE}"
+
+              # Grab binaries from the image
+              oc image extract --confirm ${IMAGE} --path=/usr/bin/oras:. && chmod +x ./oras
+              oc image extract --confirm ${IMAGE} --path=/usr/local/bin/retry:. && chmod +x ./retry
+
+              REPO=$(echo ${IMAGE} | awk -F '@' '{ print $1 }')
+              TAG="$(echo ${IMAGE} | awk -F '@' '{print $2 }' | sed s/:/-/).test"
+
+
+              echo "Pushing foo.txt to $REPO:$TAG"
+              echo -n "hello world" > foo.txt
+              ./oras push $REPO:$TAG foo.txt:text/plain
+
+              rm foo.txt
+
+              echo "Pulling foo.txt to $REPO:$TAG"
+              ./oras pull $REPO:$TAG
+              OUTPUT=$(cat foo.txt)
+
+              echo "Received ${OUTPUT}"
+
+              if [ "$OUTPUT" == "hello world" ]; then
+                RESULT="SUCCESS"
+                SUCCESSES=1
+                FAILURES=0
+              else
+                RESULT="FAILURE"
+                SUCCESSES=0
+                FAILURES=1
+              fi
+
+              // Output the standardized TEST_OUTPUT result in JSON form
+              TEST_OUTPUT='{"result": "'"$RESULT"'", "timestamp": "'"$(date +%s)"'", "failures": '"$FAILURES"', "successes": '"$SUCCESSES"', "warnings": 0}'
+              echo -n "${TEST_OUTPUT}" | tee $(results.TEST_OUTPUT.path)
