@@ -27,28 +27,33 @@ spec:
                 value: $(params.SNAPSHOT)
             script: |
               echo -e "Grabbing a copy of yq"
-              oc image extract --confirm quay.io/konflux-ci/yq:latest --path=/usr/bin/yq:. && chmod +x ./yq
+              oc image extract --confirm quay.io/konflux-ci/yq:latest --path=/usr/bin/yq:/usr/bin/. && chmod +x /usr/bin/yq
+
               echo -e "Testing Snapshot:\n ${SNAPSHOT}"
 
-              IMAGE=$(echo ${SNAPSHOT} | ./yq -r '.components[].containerImage')
+              IMAGE=$(echo ${SNAPSHOT} | yq -r '.components[].containerImage')
               echo -e "Found image ${IMAGE}"
 
               # Grab binaries from the image
-              oc image extract --confirm ${IMAGE} --path=/usr/bin/oras:. && chmod +x ./oras
-              oc image extract --confirm ${IMAGE} --path=/usr/local/bin/retry:. && chmod +x ./retry
+              oc image extract --confirm ${IMAGE} --path=/usr/bin/oras:/usr/bin/. && chmod +x /usr/bin/oras
+              oc image extract --confirm ${IMAGE} --path=/usr/bin/yq:/usr/bin/. && chmod +x /usr/bin/yq
+              oc image extract --confirm ${IMAGE} --path=/usr/local/bin/retry:/usr/local/bin/. && chmod +x /usr/local/bin/retry
+              oc image extract --confirm ${IMAGE} --path=/usr/local/bin/select-oci-auth:/usr/local/bin/. && chmod +x /usr/local/bin/select-oci-auth
 
               REPO=$(echo ${IMAGE} | awk -F '@' '{ print $1 }')
               TAG="$(echo ${IMAGE} | awk -F '@' '{print $2 }' | sed s/:/-/).test"
 
+              echo "Extracting relevant OCI auth for $REPO"
+              select-oci-auth $REPO > auth.json
 
               echo "Pushing foo.txt to $REPO:$TAG"
               echo -n "hello world" > foo.txt
-              ./oras push $REPO:$TAG foo.txt:text/plain
+              oras push --no-tty --registry-config auth.json $REPO:$TAG foo.txt:text/plain
 
               rm foo.txt
 
               echo "Pulling foo.txt to $REPO:$TAG"
-              ./oras pull $REPO:$TAG
+              oras pull --no-tty --registry-config auth.json $REPO:$TAG
               OUTPUT=$(cat foo.txt)
 
               echo "Received ${OUTPUT}"

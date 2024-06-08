@@ -22,13 +22,18 @@ RUN make "build-$(echo $TARGETPLATFORM | sed s/\\/v8// | tr / -)"
 RUN mv ${ORASPKG}/oras/bin/$(echo $TARGETPLATFORM | sed s/\\/v8//)/oras /usr/bin/oras
 RUN mkdir /licenses && mv LICENSE /licenses/LICENSE
 
+FROM quay.io/konflux-ci/yq:latest@sha256:974dea6375ee9df561ffd3baf994db2b61777a71f3bcf0050c5dca91ac9b3430 as yq
+
 FROM registry.access.redhat.com/ubi9:latest@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
 RUN mkdir /licenses
 RUN useradd -r  --uid=65532 --create-home --shell /bin/bash oras
 
+COPY --from=yq /usr/bin/yq /usr/bin/yq
+
 COPY --from=builder /usr/bin/oras /usr/bin/oras
 COPY --from=builder /licenses/LICENSE /licenses/LICENSE
 COPY hack/retry.sh /usr/local/bin/retry
+COPY hack/select-oci-auth.sh /usr/local/bin/select-oci-auth
 
 WORKDIR /home/oras
 USER 65532:65532
