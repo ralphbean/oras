@@ -6,9 +6,6 @@ spec:
   params:
     - name: SNAPSHOT
       type: string
-  results:
-    - name: TEST_OUTPUT
-      value: "$(tasks.functional.results.TEST_OUTPUT)"
   tasks:
     - name: functional
       params:
@@ -17,9 +14,6 @@ spec:
       taskSpec:
         params:
           - name: SNAPSHOT
-        results:
-          - name: TEST_OUTPUT
-            description: Test output
         steps:
           - image: registry.redhat.io/openshift4/ose-cli:latest
             env:
@@ -56,18 +50,11 @@ spec:
               oras pull --no-tty --registry-config auth.json $REPO:$TAG
               OUTPUT=$(cat foo.txt)
 
+              echo "Expecting hello world"
               echo "Received ${OUTPUT}"
 
               if [ "$OUTPUT" == "hello world" ]; then
-                RESULT="SUCCESS"
-                SUCCESSES=1
-                FAILURES=0
+                exit 0
               else
-                RESULT="FAILURE"
-                SUCCESSES=0
-                FAILURES=1
+                exit 1
               fi
-
-              // Output the standardized TEST_OUTPUT result in JSON form
-              TEST_OUTPUT='{"result": "'"$RESULT"'", "timestamp": "'"$(date +%s)"'", "failures": '"$FAILURES"', "successes": '"$SUCCESSES"', "warnings": 0}'
-              echo -n "${TEST_OUTPUT}" | tee $(results.TEST_OUTPUT.path)
