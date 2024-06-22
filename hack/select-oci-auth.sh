@@ -35,7 +35,7 @@ if [[ -f ~/.docker/config.json ]]; then
         token=$(< ~/.docker/config.json yq '.auths["'$ref'"]')
         if [[ "$token" != "null" ]]; then
             >&2 echo "Using token for $ref"
-            echo -n '{"auths": {"'$registry'": '$token'}}' | yq .
+            echo -n '{"auths": {"'$ref'": '$token'}}' | yq .
             exit 0
         fi
 
